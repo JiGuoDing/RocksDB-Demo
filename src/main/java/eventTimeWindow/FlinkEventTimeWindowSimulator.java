@@ -1,9 +1,16 @@
 package eventTimeWindow;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 public class FlinkEventTimeWindowSimulator {
+    private static final Logger logger = LoggerFactory.getLogger(FlinkEventTimeWindowSimulator.class);
+    private static final Logger log = LoggerFactory.getLogger(FlinkEventTimeWindowSimulator.class);
+
     public static void main(String[] args) {
         /*
         创建窗口管理器，窗口大小为 5s
@@ -41,7 +48,32 @@ public class FlinkEventTimeWindowSimulator {
             /*
             优先处理 watermark
              */
-            if (watermarkIndex)
+            if (watermarkIndex < watermarks.size() && (eventIndex >= events.size() || watermarks .get(watermarkIndex).getTimestamp() <= events.get(eventIndex).getTimestamp())){
+                Watermark watermark = watermarks.get(watermarkIndex++);
+                windowManager.advanceWatermark(watermark.getTimestamp());
+                
+                /*
+                检查是否有窗口可以触发
+                 */
+                Map<TimeWindow, List<Event>> readyWindows = windowManager.getReadyWindows();
+
+                if (!readyWindows.isEmpty()){
+                    logger.info("Triggered Windows at watermark {}", watermark.getTimestamp());
+                    readyWindows.forEach((window, windowEvents) -> {
+                        logger.info("Window {} has events: ", window);
+                        windowEvents.forEach(event -> {
+                            logger.info("{} @ {} : {}", event.getKey(), event.getTimestamp(), event.getValue());
+                            /*
+                            TODO 此处添加窗口计算逻辑
+                             */
+                        });
+                    });
+                }
+            } else if (eventIndex < events.size()){
+                Event event = events.get(eventIndex++);
+                logger.info("Processing event: {} @ {} : {}", event.getKey(), event.getTimestamp(), event.getValue());
+                windowManager.processEvent(event);
+            }
         }
     }
 }
