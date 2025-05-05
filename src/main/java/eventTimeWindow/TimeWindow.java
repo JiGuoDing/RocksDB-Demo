@@ -1,5 +1,8 @@
 package eventTimeWindow;
 
+/*
+时间窗口
+ */
 public class TimeWindow {
     private long start;
     private long end;

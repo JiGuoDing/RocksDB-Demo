@@ -4,8 +4,17 @@ package eventTimeWindow;
 事件数据类
  */
 public class Event {
+    /*
+    事件的键
+     */
     private String key;
+    /*
+    事件的时间戳
+     */
     private long timestamp;
+    /*
+    事件的值
+     */
     private String value;
 
     public Event(String key, long timestamp, String value){

@@ -1,5 +1,8 @@
 package eventTimeWindow;
 
+/*
+水印
+ */
 public class Watermark {
     private long timestamp;
 
