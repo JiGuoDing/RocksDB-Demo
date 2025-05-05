@@ -1,0 +1,38 @@
+2025-05-04 00:44:44 [main] INFO  rocksDBDemo.RocksDBDemo - key = key1, value = value1
+2025-05-04 11:18:10 [main] INFO  rocksDBDemo.RocksDBDemo - key = key1, value = value1
+2025-05-04 12:37:53 [main] INFO  e.FlinkEventTimeWindowSimulator - Processing event: key1 @ 1000 : event1
+2025-05-04 12:37:53 [main] INFO  e.FlinkEventTimeWindowSimulator - Processing event: key1 @ 2000 : event2
+2025-05-04 12:37:53 [main] INFO  eventTimeWindow.WindowManager - watermark advanced to 3000
+2025-05-04 12:37:53 [main] INFO  eventTimeWindow.WindowManager - watermark advanced to 6000
+2025-05-04 12:37:53 [main] INFO  e.FlinkEventTimeWindowSimulator - Triggered Windows at watermark 6000
+2025-05-04 12:37:53 [main] INFO  e.FlinkEventTimeWindowSimulator - Window TimeWindow{start=0, end=5000} has events: 
+2025-05-04 12:37:53 [main] INFO  e.FlinkEventTimeWindowSimulator - key1 @ 2000 : event2
+2025-05-04 12:37:53 [main] INFO  e.FlinkEventTimeWindowSimulator - Window TimeWindow{start=0, end=5000} has events: 
+2025-05-04 12:37:53 [main] INFO  e.FlinkEventTimeWindowSimulator - key1 @ 1000 : event1
+2025-05-04 12:37:53 [main] INFO  e.FlinkEventTimeWindowSimulator - Processing event: key1 @ 6000 : event3
+2025-05-04 12:37:53 [main] INFO  e.FlinkEventTimeWindowSimulator - Processing event: key1 @ 4000 : event4
+2025-05-04 12:37:53 [main] INFO  e.FlinkEventTimeWindowSimulator - Processing event: key2 @ 3000 : event5
+2025-05-04 12:37:53 [main] INFO  e.FlinkEventTimeWindowSimulator - Processing event: key1 @ 12000 : event6
+2025-05-04 12:45:18 [main] INFO  e.FlinkEventTimeWindowSimulator - Processing event: key1 @ 1000 : event1
+2025-05-04 12:45:18 [main] INFO  e.FlinkEventTimeWindowSimulator - Processing event: key1 @ 2000 : event2
+2025-05-04 12:45:18 [main] INFO  eventTimeWindow.WindowManager - watermark advanced to 3000
+2025-05-04 12:45:18 [main] INFO  eventTimeWindow.WindowManager - watermark advanced to 6000
+2025-05-04 12:45:18 [main] INFO  e.FlinkEventTimeWindowSimulator - Triggered Windows at watermark 6000
+2025-05-04 12:45:18 [main] INFO  e.FlinkEventTimeWindowSimulator - Window TimeWindow{start=0, end=5000} has events: 
+2025-05-04 12:45:18 [main] INFO  e.FlinkEventTimeWindowSimulator - key1 @ 1000 : event1
+2025-05-04 12:45:18 [main] INFO  e.FlinkEventTimeWindowSimulator - Window TimeWindow{start=0, end=5000} has events: 
+2025-05-04 12:45:18 [main] INFO  e.FlinkEventTimeWindowSimulator - key1 @ 2000 : event2
+2025-05-04 12:45:18 [main] INFO  e.FlinkEventTimeWindowSimulator - Processing event: key1 @ 6000 : event3
+2025-05-04 12:45:18 [main] INFO  e.FlinkEventTimeWindowSimulator - Processing event: key1 @ 4000 : event4
+2025-05-04 12:45:18 [main] INFO  e.FlinkEventTimeWindowSimulator - Processing event: key2 @ 3000 : event5
+2025-05-04 12:45:18 [main] INFO  e.FlinkEventTimeWindowSimulator - Processing event: key1 @ 12000 : event6
+2025-05-04 12:45:18 [main] INFO  eventTimeWindow.WindowManager - watermark advanced to 15000
+2025-05-04 12:45:18 [main] INFO  e.FlinkEventTimeWindowSimulator - Triggered Windows at watermark 15000
+2025-05-04 12:45:18 [main] INFO  e.FlinkEventTimeWindowSimulator - Window TimeWindow{start=0, end=5000} has events: 
+2025-05-04 12:45:18 [main] INFO  e.FlinkEventTimeWindowSimulator - key1 @ 4000 : event4
+2025-05-04 12:45:18 [main] INFO  e.FlinkEventTimeWindowSimulator - Window TimeWindow{start=0, end=5000} has events: 
+2025-05-04 12:45:18 [main] INFO  e.FlinkEventTimeWindowSimulator - key2 @ 3000 : event5
+2025-05-04 12:45:18 [main] INFO  e.FlinkEventTimeWindowSimulator - Window TimeWindow{start=5000, end=10000} has events: 
+2025-05-04 12:45:18 [main] INFO  e.FlinkEventTimeWindowSimulator - key1 @ 6000 : event3
+2025-05-04 12:45:18 [main] INFO  e.FlinkEventTimeWindowSimulator - Window TimeWindow{start=10000, end=15000} has events: 
+2025-05-04 12:45:18 [main] INFO  e.FlinkEventTimeWindowSimulator - key1 @ 12000 : event6
