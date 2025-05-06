@@ -19,6 +19,9 @@ public class WindowAssigner {
     }
 
     public Collection<TimeWindow> assignWindows(long timestamp){
+        /*
+        滚动窗口
+         */
         long start = timestamp - (timestamp % windowSize);
         long end = start + windowSize;
         return Collections.singletonList(new TimeWindow(start, end));

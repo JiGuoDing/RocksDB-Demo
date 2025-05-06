@@ -43,6 +43,15 @@ public class Event {
         return value;
     }
 
+    @Override
+    public String toString() {
+        return "Event{" +
+                "key='" + key + '\'' +
+                ", timestamp=" + timestamp +
+                ", value='" + value + '\'' +
+                '}';
+    }
+
     public void setValue(String value) {
         this.value = value;
     }

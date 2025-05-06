@@ -1,5 +1,6 @@
 package eventTimeWindow;
 
+import org.rocksdb.RocksDBException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,9 +11,67 @@ public class WindowManager {
     private final WindowAssigner windowAssigner;
     private long currentWatermark = Long.MIN_VALUE;
     private static final Logger logger = LoggerFactory.getLogger(WindowManager.class);
+    private StateBackend stateBackend;
 
-    public WindowManager(long windowSize){
+    public WindowManager(long windowSize) throws RocksDBException {
         this.windowAssigner = new WindowAssigner(windowSize);
+        this.stateBackend = new StateBackend("data/rocksdb");
+        initTestData();
+    }
+
+    private void initTestData() throws RocksDBException {
+        byte[] largeValue = new byte[1024];
+        Arrays.fill(largeValue, (byte)1);
+        for (int i = 0; i < 10000; i++) {
+            stateBackend.putState("key_" + i, largeValue);
+        }
+    }
+
+    public Map<String, Map<TimeWindow, List<Event>>> getWindows() {
+        return windows;
+    }
+
+    public WindowAssigner getWindowAssigner() {
+        return windowAssigner;
+    }
+
+    public long getCurrentWatermark() {
+        return currentWatermark;
+    }
+
+    public void setCurrentWatermark(long currentWatermark) {
+        this.currentWatermark = currentWatermark;
+    }
+
+    public StateBackend getStateBackend() {
+        return stateBackend;
+    }
+
+    public void setStateBackend(StateBackend stateBackend) {
+        this.stateBackend = stateBackend;
+    }
+
+    public void prefetchForEvent(Event event) throws RocksDBException {
+        /*
+        预测下一个窗口可能访问的key
+         */
+        List<String> keysToPrefetch = Arrays.asList(
+                "key_" + (event.getTimestamp() % 10000),
+                "key_" + ((event.getTimestamp() + this.windowAssigner.getWindowSize()) % 10000)
+        );
+        stateBackend.prefetch(keysToPrefetch);
+    }
+
+    /*
+    为指定的 n 个 event 预取状态
+     */
+    public void prefetchStateForEvent(List<Event> events) throws RocksDBException {
+        List<String> keysToPrefetch = new ArrayList<>();
+
+        events.forEach(event -> {
+            keysToPrefetch.add(event.getKey());
+        });
+        stateBackend.prefetch(keysToPrefetch);
     }
 
     public void processEvent(Event event){
