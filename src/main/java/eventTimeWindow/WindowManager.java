@@ -65,12 +65,10 @@ public class WindowManager {
     /*
     为指定的 n 个 event 预取状态
      */
-    public void prefetchStateForEvent(List<Event> events) throws RocksDBException {
+    public void prefetchStateForEvent(List<Event> events) {
         List<String> keysToPrefetch = new ArrayList<>();
 
-        events.forEach(event -> {
-            keysToPrefetch.add(event.getKey());
-        });
+        events.forEach(event -> keysToPrefetch.add(event.getKey()));
         stateBackend.prefetch(keysToPrefetch);
     }
 

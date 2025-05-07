@@ -61,14 +61,14 @@ public class StateBackend {
         /*
         模拟磁盘读取延迟
          */
-        Thread.sleep(10);
+        Thread.sleep(50);
         return rocksDB.get(key.getBytes());
     }
 
     /*
     预取状态
      */
-    public void prefetch(Collection<String> keys) throws RocksDBException {
+    public void prefetch(Collection<String> keys) {
         if (closed.get())
             return;
 
@@ -78,6 +78,7 @@ public class StateBackend {
                     byte[] value = rocksDB.get(readOptions, key.getBytes());
                     if (value != null) {
                         prefetchedKeys.add(key);
+                        logger.info("Prefetched key: {}", key);
                     }
                 }
             } catch (RocksDBException e) {
@@ -85,6 +86,13 @@ public class StateBackend {
                 throw new RuntimeException(e);
             }
         });
+    }
+
+    /*
+    清空预取列表
+     */
+    public void clearPrefetch() {
+        prefetchedKeys.clear();
     }
 
     /*

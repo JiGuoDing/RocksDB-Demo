@@ -79,19 +79,15 @@ public class FlinkEventTimeWindowSimulator {
             } else {
                 Event event = events.get(eventIndex++);
 
-                if (rand.nextDouble() < 0.1) {
-                    /*
-                    以 1/5 的概率对后续5个事件进行状态预取
-                     */
-                    int endIndex = Math.min(eventIndex + 5, events.size());
-                    if (eventIndex < events.size()) {
-                        List<Event> nextEvents = events.subList(eventIndex, endIndex);
-                        windowManager.prefetchStateForEvent(nextEvents);
-                    }
-                }
-
-                // 在处理事件前预取相关状态
-                // windowManager.prefetchForEvent(event);
+                /*
+                对后续5个事件进行状态预取
+                 */
+                // int endIndex = Math.min(eventIndex + 5, events.size());
+                // if (eventIndex < events.size()) {
+                //     List<Event> nextEvents = events.subList(eventIndex, endIndex);
+                //     windowManager.getStateBackend().clearPrefetch();
+                //     windowManager.prefetchStateForEvent(nextEvents);
+                // }
 
                 long eventStart = System.currentTimeMillis();
                 windowManager.processEvent(event);
