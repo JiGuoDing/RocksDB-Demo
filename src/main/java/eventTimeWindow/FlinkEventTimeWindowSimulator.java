@@ -79,7 +79,7 @@ public class FlinkEventTimeWindowSimulator {
             } else {
                 Event event = events.get(eventIndex++);
 
-                if (rand.nextDouble() < 0) {
+                if (rand.nextDouble() < 0.2) {
                     /*
                     以 1/5 的概率对后续5个事件进行状态预取
                      */
