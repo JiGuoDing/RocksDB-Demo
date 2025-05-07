@@ -8,8 +8,6 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static java.lang.Math.min;
-
 public class FlinkEventTimeWindowSimulator {
     private static final Logger logger = LoggerFactory.getLogger(FlinkEventTimeWindowSimulator.class);
     private static final AtomicInteger totalEvents = new AtomicInteger();
@@ -23,7 +21,7 @@ public class FlinkEventTimeWindowSimulator {
         Random rand = new Random();
         for (int i = 0; i < 1000; i++) {
             long timestamp = rand.nextInt(20000);
-            String key = "key_" + rand.nextInt(10000);
+            String key = "key_" + rand.nextInt(100);
             events.add(new Event(key, timestamp, "event_" + i));
         }
         /*
@@ -64,7 +62,9 @@ public class FlinkEventTimeWindowSimulator {
                         windowEvents.forEach(event -> {
                             try {
                                 // 访问状态
+                                logger.info("Getting event {}'s status", event.toString());
                                 byte[] state = windowManager.getStateBackend().getState(event.getKey());
+                                logger.info("Finishing getting event {}'s status", event);
                                 totalEvents.incrementAndGet();
                                 /*
                                 可以对窗口内的数据进行操作
@@ -79,7 +79,7 @@ public class FlinkEventTimeWindowSimulator {
             } else {
                 Event event = events.get(eventIndex++);
 
-                if (rand.nextDouble() < 0.2) {
+                if (rand.nextDouble() < 0.1) {
                     /*
                     以 1/5 的概率对后续5个事件进行状态预取
                      */
@@ -95,11 +95,13 @@ public class FlinkEventTimeWindowSimulator {
 
                 long eventStart = System.currentTimeMillis();
                 windowManager.processEvent(event);
-                logger.info("Processing event: {}", event);
+                logger.info("Receiving event: {}", event);
                 totalProcessingTime.addAndGet(System.currentTimeMillis() - eventStart);
                 totalEvents.incrementAndGet();
             }
         }
+
+        windowManager.getStateBackend().close();
 
         // 输出性能统计
         long totalTime = System.currentTimeMillis() - startTime;

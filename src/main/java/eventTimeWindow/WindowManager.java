@@ -20,9 +20,9 @@ public class WindowManager {
     }
 
     private void initTestData() throws RocksDBException {
-        byte[] largeValue = new byte[1024];
+        byte[] largeValue = new byte[128 * 1024 * 1024];
         Arrays.fill(largeValue, (byte)1);
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < 100; i++) {
             stateBackend.putState("key_" + i, largeValue);
         }
     }
