@@ -12,6 +12,7 @@ public class WindowManager {
     private long currentWatermark = Long.MIN_VALUE;
     private static final Logger logger = LoggerFactory.getLogger(WindowManager.class);
     private StateBackend stateBackend;
+    private Random random = new Random();
 
     public WindowManager(long windowSize) throws RocksDBException {
         this.windowAssigner = new WindowAssigner(windowSize);
@@ -19,10 +20,14 @@ public class WindowManager {
         initTestData();
     }
 
+    /*
+    初始化测试状态数据
+     */
     private void initTestData() throws RocksDBException {
-        byte[] largeValue = new byte[128 * 1024 * 1024];
+        byte[] largeValue = new byte[64 * 1024 * 1024];
         Arrays.fill(largeValue, (byte)1);
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 2000; i++) {
+            logger.info("putting key_" + i);
             stateBackend.putState("key_" + i, largeValue);
         }
     }
@@ -83,6 +88,17 @@ public class WindowManager {
          */
         for (TimeWindow assignedWindow : assignedWindows) {
             windows.computeIfAbsent(event.getKey(), koo -> new HashMap<>()).computeIfAbsent(assignedWindow, koo -> new ArrayList<>()).add(event);
+        }
+
+        /*
+        模拟对事件进行一定操作的耗时
+         */
+        try {
+            int sleepTime = 10 + random.nextInt(41);
+            logger.info("processing event {} within {}ms", event, sleepTime);
+            Thread.sleep(sleepTime);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
 

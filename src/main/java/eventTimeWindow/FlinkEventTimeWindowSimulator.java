@@ -13,15 +13,15 @@ public class FlinkEventTimeWindowSimulator {
     private static final AtomicInteger totalEvents = new AtomicInteger();
     private static final AtomicLong totalProcessingTime = new AtomicLong();
 
-    public static void main(String[] args) throws RocksDBException {
+    private static void testGet() throws RocksDBException, InterruptedException {
         WindowManager windowManager = new WindowManager(5000);
 
         // 生成测试数据
         List<Event> events = new ArrayList<>();
         Random rand = new Random();
-        for (int i = 0; i < 1000; i++) {
-            long timestamp = rand.nextInt(20000);
-            String key = "key_" + rand.nextInt(100);
+        for (int i = 0; i < 5000; i++) {
+            long timestamp = rand.nextInt(200000);
+            String key = "key_" + rand.nextInt(2000);
             events.add(new Event(key, timestamp, "event_" + i));
         }
         /*
@@ -31,7 +31,7 @@ public class FlinkEventTimeWindowSimulator {
 
         // 水印生成（每5000ms一个）
         List<Watermark> watermarks = new ArrayList<>();
-        for (long t = 0; t <= 20000; t += 5000) {
+        for (long t = 0; t <= 200000; t += 5000) {
             watermarks.add(new Watermark(t));
         }
 
@@ -60,18 +60,7 @@ public class FlinkEventTimeWindowSimulator {
                     readyWindows.forEach((window, windowEvents) -> {
                         long windowStart = System.currentTimeMillis();
                         windowEvents.forEach(event -> {
-                            try {
-                                // 访问状态
-                                logger.info("Getting event {}'s status", event.toString());
-                                byte[] state = windowManager.getStateBackend().getState(event.getKey());
-                                logger.info("Finishing getting event {}'s status", event);
-                                totalEvents.incrementAndGet();
-                                /*
-                                可以对窗口内的数据进行操作
-                                 */
-                            } catch (Exception e) {
-                                logger.error("State access failed", e);
-                            }
+                            logger.info("Triggered Window {}", window);
                         });
                         totalProcessingTime.addAndGet(System.currentTimeMillis() - windowStart);
                     });
@@ -79,20 +68,139 @@ public class FlinkEventTimeWindowSimulator {
             } else {
                 Event event = events.get(eventIndex++);
 
+                logger.info("Receiving event: {}", event);
+                long eventStart = System.currentTimeMillis();
                 /*
-                对后续5个事件进行状态预取
+                将事件放入对应窗口，并执行一定操作
                  */
-                // int endIndex = Math.min(eventIndex + 5, events.size());
+                windowManager.processEvent(event);
+
+                /*
+                读取状态
+                 */
+                logger.info("Getting event {}'s status", event);
+                byte[] state = windowManager.getStateBackend().getState(event.getKey());
+                windowManager.getStateBackend().putState(event.getKey(), state);
+                logger.info("Finishing getting event {}'s status", event);
+                logger.info("Block Cache Hit Ratio: {}", windowManager.getStateBackend().getCacheHitRate());
+
+                totalProcessingTime.addAndGet(System.currentTimeMillis() - eventStart);
+                totalEvents.incrementAndGet();
+
+                /*
+                对后续10个事件进行状态异步预取
+                 */
+                // int endIndex = Math.min(eventIndex + 10, events.size());
                 // if (eventIndex < events.size()) {
                 //     List<Event> nextEvents = events.subList(eventIndex, endIndex);
                 //     windowManager.getStateBackend().clearPrefetch();
                 //     windowManager.prefetchStateForEvent(nextEvents);
                 // }
+            }
+        }
 
-                long eventStart = System.currentTimeMillis();
-                windowManager.processEvent(event);
+        windowManager.getStateBackend().close();
+
+        // 输出性能统计
+        long totalTime = System.currentTimeMillis() - startTime;
+        logger.info("Total events processed: {}", totalEvents.get());
+        logger.info("Total processing time: {}ms", totalTime);
+        logger.info("Average latency: {}ms/event",
+                (double)totalProcessingTime.get() / totalEvents.get());
+    }
+
+    private static void testMultiGet() throws RocksDBException, InterruptedException {
+        WindowManager windowManager = new WindowManager(5000);
+
+        // 生成测试数据
+        List<Event> events = new ArrayList<>();
+        Random rand = new Random();
+        for (int i = 0; i < 5000; i++) {
+            long timestamp = rand.nextInt(200000);
+            String key = "key_" + rand.nextInt(2000);
+            events.add(new Event(key, timestamp, "event_" + i));
+        }
+        /*
+        按时间戳升序排列事件
+         */
+        events.sort(Comparator.comparingLong(Event::getTimestamp));
+
+        /*
+        批次事件
+         */
+        List<byte[]> batchEventKeys = new ArrayList<>();
+
+        // 水印生成（每5000ms一个）
+        List<Watermark> watermarks = new ArrayList<>();
+        for (long t = 0; t <= 200000; t += 5000) {
+            watermarks.add(new Watermark(t));
+        }
+
+        // 处理循环（添加计时）
+        int eventIndex = 0;
+        int watermarkIndex = 0;
+        long startTime = System.currentTimeMillis();
+
+        while (eventIndex < events.size() || watermarkIndex < watermarks.size()) {
+            /*
+            条件1：水印尚未达到上限
+            条件2：
+                条件2.1：所有事件全部到达
+                条件2.2：下一个水印的时间戳不大于下一个事件的时间戳
+             */
+            if (watermarkIndex < watermarks.size() &&
+                    (eventIndex >= events.size() ||
+                            watermarks.get(watermarkIndex).getTimestamp() <= events.get(eventIndex).getTimestamp())) {
+
+                // 处理水印
+                Watermark watermark = watermarks.get(watermarkIndex++);
+                windowManager.advanceWatermark(watermark.getTimestamp());
+
+                Map<TimeWindow, List<Event>> readyWindows = windowManager.getReadyWindows();
+                if (!readyWindows.isEmpty()) {
+                    readyWindows.forEach((window, windowEvents) -> {
+                        long windowStart = System.currentTimeMillis();
+                        windowEvents.forEach(event -> {
+                            logger.info("Triggered Window {}", window);
+                        });
+                        totalProcessingTime.addAndGet(System.currentTimeMillis() - windowStart);
+                    });
+                }
+            } else {
+                Event event = events.get(eventIndex++);
+
                 logger.info("Receiving event: {}", event);
-                totalProcessingTime.addAndGet(System.currentTimeMillis() - eventStart);
+                /*
+                将事件放入对应窗口，并执行一定操作
+                 */
+                windowManager.processEvent(event);
+
+                /*
+                攒批次10个key再读取状态
+                 */
+                batchEventKeys.add(event.getKey().getBytes());
+                if (batchEventKeys.size() >= 10){
+                    logger.info("Collected 10 events, start to fetch status");
+                    long eventStart = System.currentTimeMillis();
+
+                    List<byte[]> stateList = windowManager.getStateBackend().multiGet(batchEventKeys);
+                    totalProcessingTime.addAndGet(System.currentTimeMillis() - eventStart);
+                    logger.info("Block Cache Hit Ratio: {}", windowManager.getStateBackend().getCacheHitRate());
+
+                    windowManager.getStateBackend().multiPut(batchEventKeys, stateList);
+                    batchEventKeys.clear();
+
+                    /*
+                    对后续10个事件进行状态异步预取
+                     */
+                    int endIndex = Math.min(eventIndex + 10, events.size());
+                    if (eventIndex < events.size()) {
+                        List<Event> nextEvents = events.subList(eventIndex, endIndex);
+                        windowManager.getStateBackend().clearPrefetch();
+                        windowManager.prefetchStateForEvent(nextEvents);
+                    }
+                }
+
                 totalEvents.incrementAndGet();
             }
         }
@@ -105,7 +213,11 @@ public class FlinkEventTimeWindowSimulator {
         logger.info("Total processing time: {}ms", totalTime);
         logger.info("Average latency: {}ms/event",
                 (double)totalProcessingTime.get() / totalEvents.get());
+    }
 
+    public static void main(String[] args) throws RocksDBException, InterruptedException {
+        // testGet();
+        testMultiGet();
 
 
 
