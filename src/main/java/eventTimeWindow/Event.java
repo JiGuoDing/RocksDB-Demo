@@ -1,5 +1,7 @@
 package eventTimeWindow;
 
+import java.io.IOException;
+
 /*
 事件数据类
  */
@@ -7,7 +9,7 @@ public class Event {
     /*
     事件的键
      */
-    private String key;
+    private Bid key;
     /*
     事件的时间戳
      */
@@ -17,17 +19,23 @@ public class Event {
      */
     private String value;
 
-    public Event(String key, long timestamp, String value){
+    public Event(){}
+
+    public Event(Bid key, long timestamp, String value){
         this.key = key;
         this.timestamp = timestamp;
         this.value = value;
     }
 
-    public String getKey() {
+    public Bid getKey() {
         return key;
     }
 
-    public void setKey(String key) {
+    public byte[] getKeyBytes() throws IOException {
+        return BidSerializer.serialize(key);
+    }
+
+    public void setKey(Bid key) {
         this.key = key;
     }
 

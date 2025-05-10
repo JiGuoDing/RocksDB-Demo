@@ -15,7 +15,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class StateBackend {
 
     private final RocksDB rocksDB;
-    private final Set<String> prefetchedKeys = ConcurrentHashMap.newKeySet();
+    private final Set<Bid> prefetchedKeys = ConcurrentHashMap.newKeySet();
     private final LRUCache blockCache;
     private final Statistics statistics;
     private static final Logger logger = LoggerFactory.getLogger(StateBackend.class);
@@ -52,11 +52,20 @@ public class StateBackend {
         rocksDB.put(key.getBytes(), value);
     }
 
+    public void putState(byte[] key, byte[] value) throws RocksDBException {
+        rocksDB.put(key, value);
+    }
+
+    public boolean exists(byte[] key) {
+        return rocksDB.keyExists(key);
+    }
+
     /*
     批量写入状态
      */
     public void multiPut(List<byte[]> keys, List<byte[]> values) throws RocksDBException {
         for (int i = 0; i < keys.size(); i++) {
+            logger.info("Putting key: {}", new String(keys.get(i)));
             rocksDB.put(keys.get(i), values.get(i));
         }
     }
@@ -64,19 +73,10 @@ public class StateBackend {
     /*
     读取状态
      */
-    public byte[] getState(String key) throws RocksDBException, InterruptedException {
-        if (prefetchedKeys.contains(key)) {
-            /*
-            已预取
-             */
-            return rocksDB.get(key.getBytes());
-        }
-        /*
-        模拟磁盘读取延迟
-         */
-        // Thread.sleep(50);
-        return rocksDB.get(key.getBytes());
+    public byte[] getState(byte[] key) throws RocksDBException {
+        return rocksDB.get(key);
     }
+
 
     /*
     批量读
@@ -89,7 +89,7 @@ public class StateBackend {
     /*
     预取状态
      */
-    public void prefetch(Collection<String> keys) {
+    public void prefetch(Collection<byte[]> keys) {
         if (closed.get())
             return;
 
@@ -98,16 +98,15 @@ public class StateBackend {
          */
         prefetchExecutor.submit(() -> {
             try (ReadOptions readOptions = new ReadOptions()) {
-                for (String key : keys) {
-                    byte[] value = rocksDB.get(readOptions, key.getBytes());
-                    if (value != null) {
-                        /*
-                        预取出状态
-                         */
-                        rocksDB.get(readOptions, key.getBytes());
-                        prefetchedKeys.add(key);
-                        logger.info("Prefetched key: {}", key);
-                    }
+                for (byte[] key : keys) {
+
+                    /*
+                    预取出状态
+                     */
+                    rocksDB.get(readOptions, key);
+                    // prefetchedKeys.add(key);
+                    // logger.info("Prefetched key: {}", key);ss
+
                 }
             } catch (RocksDBException e) {
                 logger.warn("Error prefetching state", e);
