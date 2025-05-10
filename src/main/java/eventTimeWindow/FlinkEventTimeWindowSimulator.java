@@ -88,14 +88,14 @@ public class FlinkEventTimeWindowSimulator {
                 totalEvents.incrementAndGet();
 
                 /*
-                对后续10个事件进行状态异步预取
+                对后续100个事件进行状态异步预取
                  */
-                // int endIndex = Math.min(eventIndex + 10, events.size());
-                // if (eventIndex < events.size()) {
-                //     List<Event> nextEvents = events.subList(eventIndex, endIndex);
-                //     windowManager.getStateBackend().clearPrefetch();
-                //     windowManager.prefetchStateForEvent(nextEvents);
-                // }
+                int endIndex = Math.min(eventIndex + 100, events.size());
+                if (eventIndex < events.size()) {
+                    List<Event> nextEvents = events.subList(eventIndex, endIndex);
+                    windowManager.getStateBackend().clearPrefetch();
+                    windowManager.prefetchStateForEvent(nextEvents);
+                }
             }
         }
 
@@ -176,11 +176,11 @@ public class FlinkEventTimeWindowSimulator {
                 windowManager.processEvent(event);
 
                 /*
-                攒批次10个key再读取状态
+                攒批次100个key再读取状态
                  */
                 batchEventKeys.add(event.getKey().getBytes());
-                if (batchEventKeys.size() >= 10){
-                    logger.info("Collected 10 events, start to fetch status");
+                if (batchEventKeys.size() >= 100){
+                    logger.info("Collected 100 events, start to fetch status");
                     long eventStart = System.currentTimeMillis();
 
                     List<byte[]> stateList = windowManager.getStateBackend().multiGet(batchEventKeys);
@@ -191,9 +191,9 @@ public class FlinkEventTimeWindowSimulator {
                     batchEventKeys.clear();
 
                     /*
-                    对后续10个事件进行状态异步预取
+                    对后续100个事件进行状态异步预取
                      */
-                    int endIndex = Math.min(eventIndex + 10, events.size());
+                    int endIndex = Math.min(eventIndex + 100, events.size());
                     if (eventIndex < events.size()) {
                         List<Event> nextEvents = events.subList(eventIndex, endIndex);
                         windowManager.getStateBackend().clearPrefetch();
@@ -216,8 +216,8 @@ public class FlinkEventTimeWindowSimulator {
     }
 
     public static void main(String[] args) throws RocksDBException, InterruptedException {
-        // testGet();
-        testMultiGet();
+        testGet();
+        // testMultiGet();
 
 
 

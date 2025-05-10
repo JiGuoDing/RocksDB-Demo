@@ -64,17 +64,7 @@ public class StateBackend {
     /*
     读取状态
      */
-    public byte[] getState(String key) throws RocksDBException, InterruptedException {
-        if (prefetchedKeys.contains(key)) {
-            /*
-            已预取
-             */
-            return rocksDB.get(key.getBytes());
-        }
-        /*
-        模拟磁盘读取延迟
-         */
-        // Thread.sleep(50);
+    public byte[] getState(String key) throws RocksDBException {
         return rocksDB.get(key.getBytes());
     }
 
